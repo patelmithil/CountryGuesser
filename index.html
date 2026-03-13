@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌍 Country Guesser</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;background:linear-gradient(135deg,#0c0d2e 0%,#1a1b4b 50%,#2d1b69 100%);min-height:100vh;display:flex;justify-content:center;align-items:flex-start;padding:20px;color:#fff;overflow-y:auto}
+.game-container{max-width:640px;width:100%;margin:auto;padding:10px 0 30px}
+.hidden{display:none!important}
+
+.start-screen{text-align:center;animation:fadeIn .6s ease}
+.start-screen .globe{font-size:5rem;display:block;margin-bottom:20px;animation:float 3s ease-in-out infinite}
+.start-screen h1{font-size:2.6rem;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,#667eea,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.start-screen .subtitle{font-size:1.05rem;opacity:.75;line-height:1.7;margin-bottom:32px}
+.start-btn{padding:16px 52px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:16px;color:#fff;font-size:1.15rem;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s;letter-spacing:.3px}
+.start-btn:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(102,126,234,.4)}
+
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes chipPop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.header{text-align:center;margin-bottom:24px}
+.header h1{font-size:1.6rem;font-weight:700;margin-bottom:14px}
+.progress-wrap{background:rgba(255,255,255,.1);border-radius:20px;height:7px;overflow:hidden;margin-bottom:8px}
+.progress-bar{height:100%;background:linear-gradient(90deg,#667eea,#a855f7);border-radius:20px;transition:width .5s ease;width:0%}
+.progress-text{font-size:.88rem;opacity:.7}
+.score-display{font-size:1rem;margin-top:4px;font-weight:600;color:#a78bfa}
+
+.card{background:rgba(255,255,255,.06);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:20px;padding:28px 24px;margin-bottom:20px;border:1px solid rgba(255,255,255,.1);animation:fadeIn .5s ease}
+.clue-label{font-size:.8rem;text-transform:uppercase;letter-spacing:2.5px;opacity:.55;margin-bottom:18px;text-align:center;font-weight:600}
+.clues-container{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.clue-chip{background:rgba(102,126,234,.18);padding:9px 20px;border-radius:30px;font-size:1.05rem;font-weight:600;border:1px solid rgba(102,126,234,.3);animation:chipPop .4s ease backwards;color:#c4b5fd}
+.clue-chip:nth-child(1){animation-delay:.08s}
+.clue-chip:nth-child(2){animation-delay:.18s}
+.clue-chip:nth-child(3){animation-delay:.28s}
+.clue-chip:nth-child(4){animation-delay:.38s}
+.clue-chip:nth-child(5){animation-delay:.48s}
+
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;animation:slideUp .5s ease .3s backwards}
+.option-btn{background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.12);border-radius:16px;padding:16px 14px;color:#fff;font-size:.97rem;cursor:pointer;transition:all .25s ease;display:flex;align-items:center;gap:12px;text-align:left;outline:none;-webkit-tap-highlight-color:transparent}
+.option-btn:hover:not(.disabled){background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);transform:translateY(-2px)}
+.option-btn:active:not(.disabled){transform:scale(.97)}
+.option-btn .flag{font-size:2rem;line-height:1;flex-shrink:0}
+.option-btn .name{font-weight:600;line-height:1.25}
+.option-btn.correct{background:rgba(34,197,94,.25)!important;border-color:#22c55e!important;opacity:1!important}
+.option-btn.wrong{background:rgba(239,68,68,.25)!important;border-color:#ef4444!important}
+.option-btn.disabled{cursor:default;pointer-events:none;opacity:.45}
+.option-btn.disabled.correct{opacity:1}
+
+.next-btn{display:none;width:100%;padding:16px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:16px;color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;margin-top:16px;transition:transform .2s,box-shadow .2s;animation:slideUp .3s ease}
+.next-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(102,126,234,.35)}
+
+.summary{text-align:center;animation:fadeIn .6s ease}
+.summary h2{font-size:2rem;margin-bottom:24px;font-weight:800}
+.final-score{font-size:5rem;font-weight:800;background:linear-gradient(135deg,#667eea,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.1;margin-bottom:4px}
+.score-label{font-size:1.1rem;opacity:.6;margin-bottom:24px;font-weight:500}
+.message{font-size:1.35rem;margin-bottom:32px;line-height:1.5}
+.play-again-btn{padding:16px 48px;background:linear-gradient(135deg,#667eea,#764ba2);border:none;border-radius:16px;color:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.play-again-btn:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(102,126,234,.4)}
+
+.review-list{text-align:left;margin:20px 0 28px;max-width:400px;margin-left:auto;margin-right:auto}
+.review-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.review-item:last-child{border-bottom:none}
+.review-icon{font-size:1.3rem;flex-shrink:0}
+.review-flag{font-size:1.5rem;flex-shrink:0}
+.review-name{font-weight:600;font-size:.95rem}
+
+@media(max-width:520px){
+.options-grid{grid-template-columns:1fr}
+.header h1{font-size:1.3rem}
+.card{padding:22px 18px}
+.start-screen h1{font-size:2rem}
+.start-screen .globe{font-size:3.8rem}
+.clue-chip{font-size:.95rem;padding:7px 16px}
+.option-btn{padding:14px 12px}
+.option-btn .flag{font-size:1.7rem}
+.option-btn .name{font-size:.9rem}
+.final-score{font-size:4rem}
+}
+</style>
+</head>
+<body>
+<div class="game-container">
+<div id="start-screen" class="start-screen">
+<span class="globe">🌍</span>
+<h1>Country Guesser</h1>
+<p class="subtitle">Can you identify countries from 5 mystery clues?<br>Test your geography knowledge - 5 questions per round!</p>
+<button class="start-btn" onclick="startGame()">Start Game</button>
+</div>
+
+<div id="game-screen" class="hidden">
+<div class="header">
+<h1>🌍 Country Guesser</h1>
+<div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+<div class="progress-text" id="progress-text">Question 1 of 5</div>
+<div class="score-display" id="score-display">Score: 0 / 5</div>
+</div>
+<div class="card" id="clue-card">
+<div class="clue-label">🔍 Guess the country</div>
+<div class="clues-container" id="clues-container"></div>
+</div>
+<div class="options-grid" id="options-grid"></div>
+<button class="next-btn" id="next-btn" onclick="nextQuestion()">Next Question →</button>
+</div>
+
+<div id="summary-screen" class="hidden">
+<div class="card summary">
+<h2>Game Over!</h2>
+<div class="final-score" id="final-score">0 / 5</div>
+<div class="score-label">Correct Answers</div>
+<div class="message" id="summary-message"></div>
+<div class="review-list" id="review-list"></div>
+<button class="play-again-btn" onclick="startGame()">🔄 Play Again</button>
+</div>
+</div>
+</div>
+
+<script>
+const COUNTRIES=[
+{name:"United States",flag:"🇺🇸",clues:["Hollywood","Hamburger","Eagle","Canyon","Baseball"]},
+{name:"Canada",flag:"🇨🇦",clues:["Maple","Hockey","Poutine","Moose","Tundra"]},
+{name:"Mexico",flag:"🇲🇽",clues:["Taco","Mariachi","Aztec","Sombrero","Tequila"]},
+{name:"Brazil",flag:"🇧🇷",clues:["Carnival","Samba","Amazon","Coffee","Capoeira"]},
+{name:"Argentina",flag:"🇦🇷",clues:["Tango","Pampas","Gaucho","Steak","Patagonia"]},
+{name:"Colombia",flag:"🇨🇴",clues:["Emerald","Bogota","Cumbia","Orchid","Arepas"]},
+{name:"Peru",flag:"🇵🇪",clues:["Inca","Lima","Alpaca","Ceviche","Machu Picchu"]},
+{name:"Chile",flag:"🇨🇱",clues:["Atacama","Santiago","Wine","Copper","Narrow"]},
+{name:"Venezuela",flag:"🇻🇪",clues:["Caracas","Petroleum","Tepui","Arepa","Orinoco"]},
+{name:"Ecuador",flag:"🇪🇨",clues:["Galapagos","Equator","Banana","Quito","Volcanic"]},
+{name:"Cuba",flag:"🇨🇺",clues:["Havana","Cigars","Salsa","Vintage","Revolution"]},
+{name:"Jamaica",flag:"🇯🇲",clues:["Reggae","Kingston","Jerk","Bobsled","Rastafari"]},
+{name:"Costa Rica",flag:"🇨🇷",clues:["Rainforest","Sloth","Volcano","Toucan","Biodiversity"]},
+{name:"Panama",flag:"🇵🇦",clues:["Canal","Isthmus","Banking","Tropical","Crossroads"]},
+{name:"Guatemala",flag:"🇬🇹",clues:["Maya","Antigua","Quetzal","Tikal","Jade"]},
+{name:"Uruguay",flag:"🇺🇾",clues:["Montevideo","Mate","Chivito","Candombe","Ranching"]},
+{name:"Bolivia",flag:"🇧🇴",clues:["Altiplano","Llama","Uyuni","Cholita","Quinoa"]},
+{name:"Paraguay",flag:"🇵🇾",clues:["Asuncion","Guarani","Landlocked","Chaco","Yerba"]},
+{name:"Honduras",flag:"🇭🇳",clues:["Tegucigalpa","Copan","Caribbean","Reef","Mahogany"]},
+{name:"Dominican Republic",flag:"🇩🇴",clues:["Merengue","Bachata","Resorts","Baseball","Hispaniola"]},
+{name:"Haiti",flag:"🇭🇹",clues:["Creole","Voodoo","Citadelle","Port-au-Prince","Earthquake"]},
+{name:"Trinidad and Tobago",flag:"🇹🇹",clues:["Steelpan","Calypso","Carnival","Limbo","Pitch"]},
+{name:"El Salvador",flag:"🇸🇻",clues:["Pupusa","Volcanic","Pacific","Smallest","Surfing"]},
+{name:"Nicaragua",flag:"🇳🇮",clues:["Managua","Lakes","Colonial","Granada","Sandboarding"]},
+{name:"Suriname",flag:"🇸🇷",clues:["Paramaribo","Dutch","Rainforest","Diverse","Bauxite"]},
+{name:"Guyana",flag:"🇬🇾",clues:["Georgetown","Rainforest","Sugar","Cricket","Kaieteur"]},
+{name:"United Kingdom",flag:"🇬🇧",clues:["Monarchy","Thames","Beatles","Cricket","Scones"]},
+{name:"France",flag:"🇫🇷",clues:["Baguette","Eiffel","Lavender","Croissant","Versailles"]},
+{name:"Germany",flag:"🇩🇪",clues:["Autobahn","Oktoberfest","Bratwurst","Brandenburg","Lederhosen"]},
+{name:"Italy",flag:"🇮🇹",clues:["Colosseum","Pasta","Gondola","Renaissance","Espresso"]},
+{name:"Spain",flag:"🇪🇸",clues:["Flamenco","Paella","Bullfighting","Alhambra","Siesta"]},
+{name:"Portugal",flag:"🇵🇹",clues:["Fado","Lisbon","Cork","Pasteis","Algarve"]},
+{name:"Netherlands",flag:"🇳🇱",clues:["Tulips","Windmills","Canals","Clogs","Gouda"]},
+{name:"Belgium",flag:"🇧🇪",clues:["Waffles","Chocolate","Brussels","Bruges","Atomium"]},
+{name:"Switzerland",flag:"🇨🇭",clues:["Alps","Chocolate","Watches","Neutrality","Fondue"]},
+{name:"Austria",flag:"🇦🇹",clues:["Mozart","Waltz","Schnitzel","Vienna","Strudel"]},
+{name:"Sweden",flag:"🇸🇪",clues:["IKEA","Meatballs","Nobel","Archipelago","Aurora"]},
+{name:"Norway",flag:"🇳🇴",clues:["Fjords","Vikings","Salmon","Trolls","Oil"]},
+{name:"Denmark",flag:"🇩🇰",clues:["Lego","Hygge","Copenhagen","Pastry","Hamlet"]},
+{name:"Finland",flag:"🇫🇮",clues:["Sauna","Nokia","Lakes","Reindeer","Sisu"]},
+{name:"Iceland",flag:"🇮🇸",clues:["Geysers","Volcanic","Puffins","Glaciers","Geothermal"]},
+{name:"Ireland",flag:"🇮🇪",clues:["Shamrock","Guinness","Cliffs","Celtic","Dublin"]},
+{name:"Poland",flag:"🇵🇱",clues:["Pierogi","Krakow","Chopin","Amber","Bison"]},
+{name:"Czech Republic",flag:"🇨🇿",clues:["Prague","Beer","Bohemia","Castles","Kafka"]},
+{name:"Hungary",flag:"🇭🇺",clues:["Goulash","Budapest","Thermal","Paprika","Danube"]},
+{name:"Romania",flag:"🇷🇴",clues:["Transylvania","Dracula","Carpathians","Bucharest","Folklore"]},
+{name:"Bulgaria",flag:"🇧🇬",clues:["Yogurt","Roses","Balkans","Sofia","Thracian"]},
+{name:"Greece",flag:"🇬🇷",clues:["Parthenon","Mythology","Olives","Islands","Democracy"]},
+{name:"Turkey",flag:"🇹🇷",clues:["Istanbul","Bazaar","Kebab","Mosque","Cappadocia"]},
+{name:"Russia",flag:"🇷🇺",clues:["Kremlin","Vodka","Siberia","Matryoshka","Ballet"]},
+{name:"Ukraine",flag:"🇺🇦",clues:["Kyiv","Sunflower","Borscht","Steppe","Cossack"]},
+{name:"Croatia",flag:"🇭🇷",clues:["Dubrovnik","Adriatic","Dalmatian","Plitvice","Coastline"]},
+{name:"Serbia",flag:"🇷🇸",clues:["Belgrade","Monastery","Plum","Danube","Tesla"]},
+{name:"Slovakia",flag:"🇸🇰",clues:["Bratislava","Tatras","Castles","Bryndza","Caves"]},
+{name:"Slovenia",flag:"🇸🇮",clues:["Ljubljana","Alpine","Caves","Honey","Lipizzaner"]},
+{name:"Lithuania",flag:"🇱🇹",clues:["Vilnius","Baltic","Amber","Basketball","Dunes"]},
+{name:"Latvia",flag:"🇱🇻",clues:["Riga","Baltic","Medieval","Forests","Midsummer"]},
+{name:"Estonia",flag:"🇪🇪",clues:["Tallinn","Digital","Singing","Sauna","Startup"]},
+{name:"Luxembourg",flag:"🇱🇺",clues:["Banking","Castles","Multilingual","Tiny","Steel"]},
+{name:"Malta",flag:"🇲🇹",clues:["Valletta","Knights","Mediterranean","Megalithic","Diving"]},
+{name:"Cyprus",flag:"🇨🇾",clues:["Nicosia","Halloumi","Divided","Aphrodite","Mediterranean"]},
+{name:"Montenegro",flag:"🇲🇪",clues:["Podgorica","Adriatic","Kotor","Mountains","Bay"]},
+{name:"Albania",flag:"🇦🇱",clues:["Tirana","Bunkers","Adriatic","Eagle","Ottoman"]},
+{name:"Belarus",flag:"🇧🇾",clues:["Minsk","Soviet","Bison","Forests","Potatoes"]},
+{name:"North Macedonia",flag:"🇲🇰",clues:["Skopje","Alexander","Ohrid","Balkans","Orthodox"]},
+{name:"Moldova",flag:"🇲🇩",clues:["Chisinau","Wine","Landlocked","Soviet","Vineyards"]},
+{name:"Japan",flag:"🇯🇵",clues:["Sushi","Samurai","Cherry","Origami","Tokyo"]},
+{name:"China",flag:"🇨🇳",clues:["Dragon","Wall","Bamboo","Dumpling","Dynasty"]},
+{name:"South Korea",flag:"🇰🇷",clues:["Kimchi","Seoul","Taekwondo","K-pop","Samsung"]},
+{name:"India",flag:"🇮🇳",clues:["Bollywood","Curry","Ganges","Peacock","Spices"]},
+{name:"Thailand",flag:"🇹🇭",clues:["Bangkok","Temples","Tuktuk","Elephant","Muay Thai"]},
+{name:"Vietnam",flag:"🇻🇳",clues:["Pho","Hanoi","Motorbikes","Lanterns","Rice"]},
+{name:"Philippines",flag:"🇵🇭",clues:["Jeepney","Manila","Typhoons","Adobo","Islands"]},
+{name:"Indonesia",flag:"🇮🇩",clues:["Jakarta","Batik","Bali","Orangutan","Archipelago"]},
+{name:"Malaysia",flag:"🇲🇾",clues:["Petronas","Durian","Rainforest","Borneo","Multicultural"]},
+{name:"Singapore",flag:"🇸🇬",clues:["Marina","Hawker","Gardens","Merlion","Skyscrapers"]},
+{name:"Myanmar",flag:"🇲🇲",clues:["Pagodas","Yangon","Teak","Rubies","Irrawaddy"]},
+{name:"Cambodia",flag:"🇰🇭",clues:["Angkor","Khmer","Mekong","Silk","Ruins"]},
+{name:"Nepal",flag:"🇳🇵",clues:["Everest","Kathmandu","Himalayas","Sherpa","Prayer"]},
+{name:"Pakistan",flag:"🇵🇰",clues:["Islamabad","Indus","Cricket","Karakoram","Mosque"]},
+{name:"Bangladesh",flag:"🇧🇩",clues:["Dhaka","Garments","Delta","Monsoon","Rickshaws"]},
+{name:"Sri Lanka",flag:"🇱🇰",clues:["Colombo","Tea","Cinnamon","Sapphire","Tropical"]},
+{name:"Mongolia",flag:"🇲🇳",clues:["Nomadic","Steppe","Yurt","Genghis","Horses"]},
+{name:"Iran",flag:"🇮🇷",clues:["Tehran","Persian","Carpets","Saffron","Bazaar"]},
+{name:"Iraq",flag:"🇮🇶",clues:["Baghdad","Mesopotamia","Tigris","Ancient","Marshlands"]},
+{name:"Saudi Arabia",flag:"🇸🇦",clues:["Mecca","Desert","Petroleum","Riyadh","Camels"]},
+{name:"United Arab Emirates",flag:"🇦🇪",clues:["Dubai","Skyscrapers","Oasis","Luxury","Falcon"]},
+{name:"Israel",flag:"🇮🇱",clues:["Jerusalem","Kibbutz","Negev","Startup","Falafel"]},
+{name:"Jordan",flag:"🇯🇴",clues:["Petra","Amman","Desert","Roman","Bedouin"]},
+{name:"Lebanon",flag:"🇱🇧",clues:["Beirut","Cedar","Mediterranean","Hummus","Phoenician"]},
+{name:"Laos",flag:"🇱🇦",clues:["Vientiane","Buddhist","Landlocked","Waterfalls","Karst"]},
+{name:"Qatar",flag:"🇶🇦",clues:["Doha","Pearl","Gas","Peninsula","Souq"]},
+{name:"Kuwait",flag:"🇰🇼",clues:["Towers","Petroleum","Desert","Gulf","Dinar"]},
+{name:"Oman",flag:"🇴🇲",clues:["Muscat","Frankincense","Sultan","Wadis","Dhow"]},
+{name:"Georgia",flag:"🇬🇪",clues:["Tbilisi","Wine","Caucasus","Khachapuri","Orthodox"]},
+{name:"Armenia",flag:"🇦🇲",clues:["Yerevan","Ararat","Cognac","Monastery","Duduk"]},
+{name:"Azerbaijan",flag:"🇦🇿",clues:["Baku","Flames","Caspian","Petroleum","Carpet"]},
+{name:"Kazakhstan",flag:"🇰🇿",clues:["Astana","Steppe","Nomadic","Space","Apples"]},
+{name:"Uzbekistan",flag:"🇺🇿",clues:["Tashkent","Samarkand","Cotton","Mosques","Plov"]},
+{name:"Taiwan",flag:"🇹🇼",clues:["Taipei","Semiconductor","Boba","Electronics","Night Market"]},
+{name:"Afghanistan",flag:"🇦🇫",clues:["Kabul","Mountains","Tribal","Pomegranate","Lapis"]},
+{name:"Bhutan",flag:"🇧🇹",clues:["Thimphu","Happiness","Dzong","Himalayan","Archery"]},
+{name:"Maldives",flag:"🇲🇻",clues:["Atolls","Underwater","Resorts","Coral","Overwater"]},
+{name:"Syria",flag:"🇸🇾",clues:["Damascus","Ancient","Citadel","Souq","Umayyad"]},
+{name:"Yemen",flag:"🇾🇪",clues:["Sanaa","Mocha","Frankincense","Socotra","Mud-brick"]},
+{name:"Turkmenistan",flag:"🇹🇲",clues:["Ashgabat","Marble","Desert","Gas","Carpet"]},
+{name:"Kyrgyzstan",flag:"🇰🇬",clues:["Bishkek","Nomadic","Mountains","Yurt","Eagle"]},
+{name:"Tajikistan",flag:"🇹🇯",clues:["Dushanbe","Pamir","Mountains","Silk Road","Glaciers"]},
+{name:"Egypt",flag:"🇪🇬",clues:["Pyramids","Pharaoh","Nile","Sphinx","Hieroglyphs"]},
+{name:"South Africa",flag:"🇿🇦",clues:["Apartheid","Safari","Mandela","Table Mountain","Kruger"]},
+{name:"Nigeria",flag:"🇳🇬",clues:["Lagos","Nollywood","Jollof","Afrobeats","Populous"]},
+{name:"Kenya",flag:"🇰🇪",clues:["Safari","Nairobi","Marathon","Masai","Savanna"]},
+{name:"Ethiopia",flag:"🇪🇹",clues:["Addis Ababa","Coffee","Ancient","Injera","Lucy"]},
+{name:"Morocco",flag:"🇲🇦",clues:["Marrakech","Tagine","Sahara","Medina","Couscous"]},
+{name:"Ghana",flag:"🇬🇭",clues:["Accra","Cocoa","Kente","Ashanti","Gold"]},
+{name:"Tanzania",flag:"🇹🇿",clues:["Serengeti","Kilimanjaro","Zanzibar","Safari","Wildebeest"]},
+{name:"Senegal",flag:"🇸🇳",clues:["Dakar","Teranga","Djembe","Peanut","Wrestling"]},
+{name:"Madagascar",flag:"🇲🇬",clues:["Lemur","Vanilla","Baobab","Island","Biodiversity"]},
+{name:"Tunisia",flag:"🇹🇳",clues:["Tunis","Carthage","Sahara","Mediterranean","Mosaic"]},
+{name:"Algeria",flag:"🇩🇿",clues:["Algiers","Sahara","Casbah","Mediterranean","Berber"]},
+{name:"DR Congo",flag:"🇨🇩",clues:["Kinshasa","Congo","Coltan","Minerals","Rainforest"]},
+{name:"Zimbabwe",flag:"🇿🇼",clues:["Harare","Victoria Falls","Ruins","Safari","Shona"]},
+{name:"Mozambique",flag:"🇲🇿",clues:["Maputo","Coastal","Prawns","Mangroves","Portuguese"]},
+{name:"Rwanda",flag:"🇷🇼",clues:["Kigali","Gorilla","Hills","Clean","Reconciliation"]},
+{name:"Uganda",flag:"🇺🇬",clues:["Kampala","Pearl","Gorilla","Nile","Equator"]},
+{name:"Ivory Coast",flag:"🇨🇮",clues:["Abidjan","Cocoa","Basilica","Plantain","Masks"]},
+{name:"Cameroon",flag:"🇨🇲",clues:["Douala","Volcanic","Bilingual","Football","Diverse"]},
+{name:"Namibia",flag:"🇳🇦",clues:["Windhoek","Dunes","Skeleton Coast","Safari","Desert"]},
+{name:"Angola",flag:"🇦🇴",clues:["Luanda","Petroleum","Kizomba","Diamond","Portuguese"]},
+{name:"Zambia",flag:"🇿🇲",clues:["Lusaka","Victoria Falls","Copper","Safari","Zambezi"]},
+{name:"Botswana",flag:"🇧🇼",clues:["Gaborone","Diamond","Okavango","Safari","Kalahari"]},
+{name:"Libya",flag:"🇱🇾",clues:["Tripoli","Sahara","Ancient","Mediterranean","Roman"]},
+{name:"Sudan",flag:"🇸🇩",clues:["Khartoum","Nile","Pyramids","Desert","Dervish"]},
+{name:"Mauritius",flag:"🇲🇺",clues:["Dodo","Beaches","Sugar","Coral","Volcanic"]},
+{name:"Mali",flag:"🇲🇱",clues:["Bamako","Timbuktu","Sahara","Gold","Djenne"]},
+{name:"Niger",flag:"🇳🇪",clues:["Niamey","Sahara","Uranium","Desert","Tuareg"]},
+{name:"Burkina Faso",flag:"🇧🇫",clues:["Ouagadougou","Sahel","Cotton","Film Festival","Mossi"]},
+{name:"Togo",flag:"🇹🇬",clues:["Lome","Voodoo","Phosphate","Narrow","Coastal"]},
+{name:"Benin",flag:"🇧🇯",clues:["Porto-Novo","Voodoo","Dahomey","Cotton","Stilt Village"]},
+{name:"Somalia",flag:"🇸🇴",clues:["Mogadishu","Horn","Camels","Frankincense","Coastline"]},
+{name:"Australia",flag:"🇦🇺",clues:["Kangaroo","Outback","Sydney","Reef","Boomerang"]},
+{name:"New Zealand",flag:"🇳🇿",clues:["Kiwi","Maori","Hobbit","Rugby","Geothermal"]},
+{name:"Fiji",flag:"🇫🇯",clues:["Islands","Coral","Kava","Rugby","Tropical"]},
+{name:"Papua New Guinea",flag:"🇵🇬",clues:["Tribal","Highland","Languages","Diverse","Volcanic"]}
+];
+
+const QUESTIONS_PER_GAME=5;
+const OPTIONS_COUNT=4;
+let gameQuestions=[];
+let questionIndex=0;
+let score=0;
+let answered=false;
+let results=[];
+
+const shuffle=arr=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+const $=id=>document.getElementById(id);
+
+function startGame(){
+questionIndex=0;score=0;answered=false;results=[];
+const shuffled=shuffle(COUNTRIES);
+gameQuestions=shuffled.slice(0,QUESTIONS_PER_GAME);
+$("start-screen").classList.add("hidden");
+$("summary-screen").classList.add("hidden");
+$("game-screen").classList.remove("hidden");
+renderQuestion();
+}
+
+function renderQuestion(){
+answered=false;
+const q=gameQuestions[questionIndex];
+const pct=(questionIndex/QUESTIONS_PER_GAME)*100;
+$("progress-bar").style.width=pct+"%";
+$("progress-text").textContent=`Question ${questionIndex+1} of ${QUESTIONS_PER_GAME}`;
+$("score-display").textContent=`Score: ${score} / ${QUESTIONS_PER_GAME}`;
+
+const cc=$("clues-container");
+cc.innerHTML="";
+q.clues.forEach(c=>{const s=document.createElement("span");s.className="clue-chip";s.textContent=c;cc.appendChild(s);});
+
+const pool=COUNTRIES.filter(c=>c.name!==q.name);
+const distractors=shuffle(pool).slice(0,OPTIONS_COUNT-1);
+const options=shuffle([q,...distractors]);
+
+const og=$("options-grid");
+og.innerHTML="";
+options.forEach(opt=>{
+const btn=document.createElement("button");
+btn.className="option-btn";
+btn.innerHTML=`<span class="flag">${opt.flag}</span><span class="name">${opt.name}</span>`;
+btn.addEventListener("click",()=>handleAnswer(btn,opt,q));
+og.appendChild(btn);
+});
+
+$("next-btn").style.display="none";
+
+const card=$("clue-card");
+card.style.animation="none";
+void card.offsetHeight;
+card.style.animation="fadeIn .5s ease";
+
+og.style.animation="none";
+void og.offsetHeight;
+og.style.animation="slideUp .5s ease .3s backwards";
+}
+
+function handleAnswer(btn,selected,question){
+if(answered)return;
+answered=true;
+const correct=selected.name===question.name;
+if(correct){score++;btn.classList.add("correct");}
+else{
+btn.classList.add("wrong");
+document.querySelectorAll(".option-btn").forEach(b=>{
+if(b.querySelector(".name").textContent===question.name)b.classList.add("correct");
+});
+}
+results.push({country:question,correct});
+document.querySelectorAll(".option-btn").forEach(b=>b.classList.add("disabled"));
+$("score-display").textContent=`Score: ${score} / ${QUESTIONS_PER_GAME}`;
+const nb=$("next-btn");
+nb.textContent=questionIndex<QUESTIONS_PER_GAME-1?"Next Question →":"See Results →";
+nb.style.display="block";
+}
+
+function nextQuestion(){
+questionIndex++;
+if(questionIndex>=QUESTIONS_PER_GAME){showSummary();}
+else{renderQuestion();}
+}
+
+function showSummary(){
+$("game-screen").classList.add("hidden");
+$("summary-screen").classList.remove("hidden");
+$("final-score").textContent=`${score} / ${QUESTIONS_PER_GAME}`;
+let msg="";
+if(score===5)msg="🏆 Perfect score! Geography genius!";
+else if(score===4)msg="🌟 Excellent! So close to perfection!";
+else if(score===3)msg="👍 Good job! Solid knowledge!";
+else if(score===2)msg="🌍 Not bad! Keep exploring!";
+else if(score===1)msg="📚 Room to grow — keep learning!";
+else msg="🗺️ Better luck next time!";
+$("summary-message").textContent=msg;
+
+const rl=$("review-list");
+rl.innerHTML="";
+results.forEach(r=>{
+const div=document.createElement("div");
+div.className="review-item";
+div.innerHTML=`<span class="review-icon">${r.correct?"✅":"❌"}</span><span class="review-flag">${r.country.flag}</span><span class="review-name">${r.country.name}</span>`;
+rl.appendChild(div);
+});
+}
+</script>
+</body>
